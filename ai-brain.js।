@@ -1,1 +1,152 @@
 
+"use strict";
+
+/*
+  Professional AI Customer Support Agent
+  Version: 1.0
+  No external packages or paid API required.
+
+  Note: This is the first intelligent support foundation.
+  A real AI model will be connected in a later stage.
+*/
+
+const SUPPORT_CONFIG = {
+  businessName: "My Business",
+  supportHours: "9 AM - 6 PM",
+  defaultLanguage: "en"
+};
+
+const KNOWLEDGE_BASE = [
+  {
+    category: "payment",
+    keywords: [
+      "payment", "paid", "money", "refund",
+      "transaction", "upi", "পেমেন্ট", "টাকা", "রিফান্ড"
+    ],
+    reply:
+      "I can help you with your payment issue. Please share your transaction ID and payment date. Never share your PIN or OTP."
+  },
+  {
+    category: "order",
+    keywords: [
+      "order", "delivery", "shipping", "tracking",
+      "অর্ডার", "ডেলিভারি", "পার্সেল"
+    ],
+    reply:
+      "I can help you check your order. Please share your order ID so we can investigate the status."
+  },
+  {
+    category: "technical",
+    keywords: [
+      "website", "not working", "error", "bug",
+      "login", "password", "লোড", "সমস্যা"
+    ],
+    reply:
+      "Let's investigate the technical issue. Please describe what happened, what you expected, and any error message you received."
+  },
+  {
+    category: "complaint",
+    keywords: [
+      "angry", "complaint", "bad service",
+      "unhappy", "ভালো না", "অভিযোগ", "রাগ"
+    ],
+    reply:
+      "I'm sorry you're having this experience. Your concern is important. I'll prepare it for our support team to review."
+  }
+];
+
+function normalizeText(message) {
+  return String(message || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function detectUrgency(message) {
+  const urgentWords = [
+    "urgent", "emergency", "immediately",
+    "hacked", "fraud", "stolen", "জরুরি",
+    "হ্যাক", "প্রতারণা"
+  ];
+
+  return urgentWords.some(word => message.includes(word))
+    ? "high"
+    : "normal";
+}
+
+function detectCategory(message) {
+  let bestMatch = null;
+  let highestScore = 0;
+
+  for (const item of KNOWLEDGE_BASE) {
+    const score = item.keywords.filter(
+      keyword => message.includes(keyword)
+    ).length;
+
+    if (score > highestScore) {
+      highestScore = score;
+      bestMatch = item;
+    }
+  }
+
+  return bestMatch;
+}
+
+function analyzeMessage(customerMessage, customerName = "Customer") {
+  const message = normalizeText(customerMessage);
+
+  if (!message) {
+    return {
+      success: false,
+      error: "Please provide a customer message."
+    };
+  }
+
+  const matchedCategory = detectCategory(message);
+  const urgency = detectUrgency(message);
+
+  const category = matchedCategory
+    ? matchedCategory.category
+    : "general";
+
+  const reply = matchedCategory
+    ? matchedCategory.reply
+    : "Thank you for contacting us. Please explain your issue in a little more detail so our support team can help you.";
+
+  return {
+    success: true,
+    customer: String(customerName).slice(0, 100),
+    category,
+    urgency,
+    customerMessage: String(customerMessage).slice(0, 3000),
+    suggestedReply: reply,
+    needsHumanReview: urgency === "high" || category === "general",
+    business: SUPPORT_CONFIG.businessName,
+    createdAt: new Date().toISOString()
+  };
+}
+
+function createSupportReport(analysis) {
+  if (!analysis || !analysis.success) {
+    throw new Error("A valid analysis is required.");
+  }
+
+  return [
+    "CUSTOMER SUPPORT REPORT",
+    "-----------------------",
+    `Business: ${analysis.business}`,
+    `Customer: ${analysis.customer}`,
+    `Category: ${analysis.category}`,
+    `Urgency: ${analysis.urgency}`,
+    `Message: ${analysis.customerMessage}`,
+    `Suggested reply: ${analysis.suggestedReply}`,
+    `Human review needed: ${analysis.needsHumanReview}`,
+    `Created: ${analysis.createdAt}`
+  ].join("\n");
+}
+
+module.exports = {
+  analyzeMessage,
+  createSupportReport
+};
+
